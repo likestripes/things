@@ -9,6 +9,7 @@ type Scope struct {
 	Ancestors   []pacific.Ancestor
 	PersonId    int64
 	PersonIdStr string
+	OriginId    string
 }
 
 func ScopeToPerson(person_id int64) (ancestors []pacific.Ancestor) {

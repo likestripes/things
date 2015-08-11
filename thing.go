@@ -60,9 +60,11 @@ func (scope Scope) Thing(thing_id string) (thing Thing) {
 			KeyString: thing_id,
 		}
 		err := query.Get(&thing)
-		scope.Context.Infof(thing_id)
-		if err != nil {
-			scope.Context.Errorf(err.Error())
+		scope.Context.Infof("things.Thing lookup for:" + thing_id)
+		if thing.ThingId == "" {
+			if err != nil {
+				scope.Context.Errorf(err.Error())
+			}
 			thing = thing.New(thing_id)
 		} else {
 			thing.Map = make(map[string]interface{})
@@ -100,7 +102,7 @@ func (thing Thing) New(thing_id string) Thing {
 	return thing
 }
 
-func (thing Thing) Share(person_id int64, person_id_str, tag string) {
+func (thing Thing) Share(person_id int64, person_id_str, origin_id, tag string) {
 
 	scope := thing.Scope
 
@@ -109,6 +111,7 @@ func (thing Thing) Share(person_id int64, person_id_str, tag string) {
 		Scope:    scope,
 		ParentId: person_id_str,
 		PersonId: person_id,
+		OriginId: origin_id,
 		ObjectId: tag,
 	}
 
@@ -126,6 +129,7 @@ func (thing Thing) Share(person_id int64, person_id_str, tag string) {
 		Kind:     "SharedThing",
 		Scope:    scope,
 		ParentId: tag,
+		OriginId: origin_id,
 		ObjectId: thing.ThingId,
 	}
 	share_thing.Save()
@@ -148,6 +152,8 @@ func (thing *Thing) Save() bool {
 				thing.Map[key] = item
 			}
 		}
+	} else {
+		thing.ThingId = existing.ThingId
 	}
 
 	value_json, _ := json.Marshal(thing.Map)
@@ -169,7 +175,9 @@ func (thing *Thing) Save() bool {
 	}
 
 	for tag, _ := range thing.Tags {
-		thing.Share(thing.PersonId, thing.PersonIdStr, tag)
+		if tag != "" {
+			thing.Share(thing.PersonId, thing.PersonIdStr, scope.OriginId, tag)
+		}
 	}
 
 	return true

@@ -7,10 +7,10 @@ import (
 
 type Share struct {
 	Kind     string `datastore:"-" sql:"-"`
-	ParentId string
 	ObjectId string
-	PersonId int64
-	OriginId string
+	ParentId string `pacific_parent:"parent_id"`
+	PersonId int64  `pacific_parent:"person_id"`
+	OriginId string `pacific_parent:"origin_id"`
 	Status   int
 	Created  time.Time `sql:"-"`
 	Updated  time.Time `sql:"-"`
