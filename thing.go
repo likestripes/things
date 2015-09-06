@@ -89,6 +89,13 @@ func (scope Scope) Thing(thing_id string) (thing Thing) {
 	return thing
 }
 
+func (thing Thing) ToJSON() string {
+	vals := thing.Map
+	vals["ThingId"] = thing.ThingId
+	thing_json, _ := json.Marshal(vals)
+	return string(thing_json)
+}
+
 func (thing Thing) New(thing_id string) Thing {
 
 	thing = Thing{
