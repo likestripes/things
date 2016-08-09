@@ -35,7 +35,10 @@ func (scope Scope) Things(tag_ar ...[]string) (things []Thing) {
 		shares := scope.Shares(tags)
 		for _, share := range shares {
 			if notIn(things, share.ObjectId) {
-				things = append(things, scope.Thing(share.ObjectId))
+				thing, err := scope.Thing(share.ObjectId)
+				if err == nil {
+					things = append(things, thing)
+				}
 			}
 		}
 	}
@@ -52,19 +55,16 @@ func notIn(ar []Thing, thing_id string) bool {
 	return true
 }
 
-func (scope Scope) Thing(thing_id string) (thing Thing) {
+func (scope Scope) Thing(thing_id string) (thing Thing, err error) {
 	if thing_id != "" {
 		query := pacific.Query{
 			Context:   scope.Context,
 			Kind:      "Thing",
 			KeyString: thing_id,
 		}
-		err := query.Get(&thing)
-		scope.Context.Infof("things.Thing lookup for:" + thing_id)
-		if thing.ThingId == "" {
-			if err != nil {
-				scope.Context.Errorf(err.Error())
-			}
+		err = query.Get(&thing)
+
+		if thing.ThingId == "" || err != nil {
 			thing = thing.New(thing_id)
 		} else {
 			thing.Map = make(map[string]interface{})
@@ -86,7 +86,7 @@ func (scope Scope) Thing(thing_id string) (thing Thing) {
 	}
 
 	thing.Scope = scope
-	return thing
+	return thing, err
 }
 
 func (thing Thing) ToJSON() string {
@@ -152,15 +152,18 @@ func (thing *Thing) Save() bool {
 	}
 
 	scope := thing.Scope
-	existing := scope.Thing(thing.ThingId)
-	if existing.Status > 0 {
-		for key, item := range existing.Map {
+	existing, err := scope.Thing(thing.ThingId)
+	if existing.Status > 0 && err == nil {
+		for key, existing_value := range existing.Map {
 			if thing.Map[key] == nil {
-				thing.Map[key] = item
+				thing.Map[key] = existing_value
 			}
 		}
-	} else {
-		thing.ThingId = existing.ThingId
+	} else { // IS THIS NEEDED?
+		if thing.ThingId != existing.ThingId {
+			panic("thing is not a thing in thing.go")
+		}
+		// thing.ThingId = existing.ThingId
 	}
 
 	value_json, _ := json.Marshal(thing.Map)

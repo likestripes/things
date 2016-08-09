@@ -32,7 +32,6 @@ func (scope Scope) Tags() (tags []Tag) {
 	}
 
 	err := query.GetAll(&tags)
-	scope.Context.Infof("TAGS: " + scope.PersonIdStr)
 	if err != nil {
 		scope.Context.Errorf(err.Error())
 	}
